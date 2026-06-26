@@ -40,8 +40,8 @@ instance trivialFibration_isStableUnderProductsOfShape (J : Type*) :
   infer_instance
 
 /-- A trivial fibration has the right lifting property against all monomorphisms. -/
-lemma TrivialFibration.rlp_monomorphisms {X Y : SSet} {p : X ⟶ Y}
-    (hp : TrivialFibration p) : (MorphismProperty.monomorphisms SSet).rlp p := by
+lemma TrivialFibration.rlp_monomorphisms {X Y : SSet.{u}} {p : X ⟶ Y}
+    (hp : TrivialFibration p) : (MorphismProperty.monomorphisms SSet.{u}).rlp p := by
   rw [SSet.rlp_monomorphisms]
   simpa [TrivialFibration, boundaryInclusions_eq_modelCategoryQuillen_I] using hp
 
@@ -74,13 +74,13 @@ lemma pushoutProduct_boundary_mono {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n : 
   exact ((MorphismProperty.monomorphisms SSet.{u}).arrow_iso_iff e).2 htarget
 
 /-- Trivial fibrations of simplicial sets are stable under pullback. -/
-lemma TrivialFibration.of_isPullback {X Y Y' S : SSet} {f : X ⟶ S} {g : Y ⟶ S}
+lemma TrivialFibration.of_isPullback {X Y Y' S : SSet.{u}} {f : X ⟶ S} {g : Y ⟶ S}
     {f' : Y' ⟶ Y} {g' : Y' ⟶ X} (sq : IsPullback f' g' g f)
     (hg : TrivialFibration g) : TrivialFibration g' :=
   MorphismProperty.of_isPullback sq hg
 
 /-- Products of trivial fibrations of simplicial sets are trivial fibrations. -/
-lemma TrivialFibration.piMap {J : Type*} {X Y : J → SSet} [HasProduct X] [HasProduct Y]
+lemma TrivialFibration.piMap {J : Type*} {X Y : J → SSet.{u}} [HasProduct X] [HasProduct Y]
     (f : ∀ j, X j ⟶ Y j) (hf : ∀ j, TrivialFibration (f j)) :
     TrivialFibration (Limits.Pi.map f) := by
   let α : Discrete.functor X ⟶ Discrete.functor Y :=
@@ -107,7 +107,7 @@ lemma TrivialFibration.pullbackObjObjπ {X₁ Y₁ E B : SSet.{u}} {i : X₁ ⟶
       exact hp _ (pushoutProduct_boundary_mono i n)
 
 /-- Every map from the terminal simplex `Δ[0]` is a monomorphism. -/
-lemma mono_yonedaEquiv_symm_zero {X : SSet} (x : X _⦋0⦌) :
+lemma mono_yonedaEquiv_symm_zero {X : SSet.{u}} (x : X _⦋0⦌) :
     Mono (yonedaEquiv.symm x : Δ[0] ⟶ X) where
   right_cancellation := by
     intro Z g h _w
@@ -136,10 +136,10 @@ lemma TrivialFibration.toIsofibration {A B : QCat} {p : A ⟶ B}
     hp.rlp_monomorphisms
 
 /-- A trivial fibration of simplicial sets admits a section. -/
-noncomputable def TrivialFibration.section {X Y : SSet} {p : X ⟶ Y}
+noncomputable def TrivialFibration.section {X Y : SSet.{u}} {p : X ⟶ Y}
     (hp : TrivialFibration p) : Y ⟶ X := by
-  haveI : Mono (initial.to Y : ⊥_ SSet ⟶ Y) := inferInstance
-  haveI : HasLiftingProperty (initial.to Y : ⊥_ SSet ⟶ Y) p :=
+  haveI : Mono (initial.to Y : ⊥_ SSet.{u} ⟶ Y) := inferInstance
+  haveI : HasLiftingProperty (initial.to Y : ⊥_ SSet.{u} ⟶ Y) p :=
     hp.rlp_monomorphisms _ (MorphismProperty.monomorphisms.infer_property _)
   let sq : CommSq (initial.to X) (initial.to Y) p (𝟙 Y) :=
     CommSq.mk (by simp [initial.to_comp])
@@ -147,7 +147,7 @@ noncomputable def TrivialFibration.section {X Y : SSet} {p : X ⟶ Y}
 
 /-- The section of a trivial fibration is a right inverse. -/
 @[reassoc (attr := simp)]
-lemma TrivialFibration.section_comp {X Y : SSet} {p : X ⟶ Y}
+lemma TrivialFibration.section_comp {X Y : SSet.{u}} {p : X ⟶ Y}
     (hp : TrivialFibration p) : hp.section ≫ p = 𝟙 Y := by
   unfold TrivialFibration.section
   simp
