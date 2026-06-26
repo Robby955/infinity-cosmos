@@ -1,12 +1,16 @@
 import InfinityCosmos.ForMathlib.AlgebraicTopology.SimplicialSet.MorphismProperty
 import InfinityCosmos.ForMathlib.AlgebraicTopology.SimplicialSet.Monoidal
+import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 import Mathlib.AlgebraicTopology.SimplicialSet.CategoryWithFibrations
 import Mathlib.CategoryTheory.MorphismProperty.LiftingProperty
 import Mathlib.CategoryTheory.Limits.Shapes.Products
 
+universe u
+
 namespace SSet
 
 open CategoryTheory Limits MorphismProperty Simplicial
+open MonoidalCategory MonoidalClosed HomotopicalAlgebra
 
 section trivialFibration
 
@@ -41,6 +45,34 @@ lemma TrivialFibration.rlp_monomorphisms {X Y : SSet} {p : X ⟶ Y}
   rw [SSet.rlp_monomorphisms]
   simpa [TrivialFibration, boundaryInclusions_eq_modelCategoryQuillen_I] using hp
 
+/-- Trivial fibrations of simplicial sets are exactly the maps with the right lifting property
+against all monomorphisms. -/
+lemma trivialFibration_eq_rlp_monomorphisms :
+    TrivialFibration = (MorphismProperty.monomorphisms SSet.{u}).rlp := by
+  change BoundaryInclusions.rlp = (MorphismProperty.monomorphisms SSet.{u}).rlp
+  rw [boundaryInclusions_eq_modelCategoryQuillen_I]
+  exact SSet.rlp_monomorphisms.symm
+
+private noncomputable def arrowIsoRange {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] :
+    Arrow.mk i ≅ Arrow.mk (Subcomplex.range i).ι :=
+  Arrow.isoMk' i (Subcomplex.range i).ι (asIso (Subcomplex.toRange i)) (Iso.refl _) (by
+    simp)
+
+/-- The pushout-product of a monomorphism with a boundary inclusion is a monomorphism. -/
+lemma pushoutProduct_boundary_mono {X Y : SSet.{u}} (i : X ⟶ Y) [Mono i] (n : ℕ) :
+    Mono ((Arrow.mk i □ Arrow.mk (∂Δ[n].ι)).hom) := by
+  let S : Y.Subcomplex := Subcomplex.range i
+  let T : (Δ[n] : SSet.{u}).Subcomplex := ∂Δ[n]
+  have htarget : (MorphismProperty.monomorphisms SSet.{u})
+      ((Arrow.mk S.ι □ Arrow.mk T.ι).hom) := by
+    have hUnion : (MorphismProperty.monomorphisms SSet.{u}) (S.unionProd T).ι := by
+      infer_instance
+    exact ((MorphismProperty.monomorphisms SSet.{u}).arrow_iso_iff
+      (Subcomplex.unionProd.ιIso S T)).1 hUnion
+  have e : (Arrow.mk i □ Arrow.mk T.ι) ≅ (Arrow.mk S.ι □ Arrow.mk T.ι) :=
+    ((MonoidalCategory.Arrow.pushoutProduct.mapIso (arrowIsoRange i)).app (Arrow.mk T.ι))
+  exact ((MorphismProperty.monomorphisms SSet.{u}).arrow_iso_iff e).2 htarget
+
 /-- Trivial fibrations of simplicial sets are stable under pullback. -/
 lemma TrivialFibration.of_isPullback {X Y Y' S : SSet} {f : X ⟶ S} {g : Y ⟶ S}
     {f' : Y' ⟶ Y} {g' : Y' ⟶ X} (sq : IsPullback f' g' g f)
@@ -58,6 +90,21 @@ lemma TrivialFibration.piMap {J : Type*} {X Y : J → SSet} [HasProduct X] [HasP
   intro j
   change BoundaryInclusions.rlp (f j.as)
   simpa [TrivialFibration] using hf j.as
+
+/-- Pullback-hom projections along monomorphisms preserve trivial fibrations of simplicial sets. -/
+lemma TrivialFibration.pullbackObjObjπ {X₁ Y₁ E B : SSet.{u}} {i : X₁ ⟶ Y₁}
+    {p : E ⟶ B} [Mono i] (hp : TrivialFibration p)
+    (sq₁₃ : MonoidalClosed.internalHom.PullbackObjObj i p) :
+    TrivialFibration sq₁₃.π := by
+  rw [trivialFibration_eq_rlp_monomorphisms] at hp
+  change BoundaryInclusions.rlp sq₁₃.π
+  intro A B j hj
+  rw [← internalHomAdjunction₂.hasLiftingProperty_iff
+    (Functor.PushoutObjObj.ofHasPushout (curriedTensor SSet) i j) sq₁₃]
+  cases hj with
+  | mk n =>
+      change HasLiftingProperty ((Arrow.mk i □ Arrow.mk (∂Δ[n].ι)).hom) p
+      exact hp _ (pushoutProduct_boundary_mono i n)
 
 /-- Every map from the terminal simplex `Δ[0]` is a monomorphism. -/
 lemma mono_yonedaEquiv_symm_zero {X : SSet} (x : X _⦋0⦌) :
