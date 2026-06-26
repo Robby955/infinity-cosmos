@@ -1,4 +1,5 @@
 import InfinityCosmos.ForMathlib.AlgebraicTopology.SimplicialSet.MorphismProperty
+import InfinityCosmos.ForMathlib.AlgebraicTopology.SimplicialSet.Homotopy
 import InfinityCosmos.ForMathlib.AlgebraicTopology.SimplicialSet.Monoidal
 import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 import Mathlib.AlgebraicTopology.SimplicialSet.CategoryWithFibrations
@@ -151,6 +152,247 @@ lemma TrivialFibration.section_comp {X Y : SSet.{u}} {p : X ⟶ Y}
     (hp : TrivialFibration p) : hp.section ≫ p = 𝟙 Y := by
   unfold TrivialFibration.section
   simp
+
+private noncomputable def TrivialFibration.boundaryHomotopyDomainMap
+    {A B : SSet.{u}} {p : A ⟶ B} (hp : TrivialFibration p) :
+    ((coherentIso.boundary.prod (⊤ : A.Subcomplex) : (coherentIso ⊗ A).Subcomplex) : SSet) ⟶
+      A where
+  app n := by
+    classical
+    exact ↾(fun x =>
+      if (x : (coherentIso ⊗ A).obj n).1 ∈ (Subcomplex.range coherentIso.src).obj n then
+        hp.section.app n (p.app n (x : (coherentIso ⊗ A).obj n).2)
+      else
+        (x : (coherentIso ⊗ A).obj n).2)
+  naturality := by
+    intro n m α
+    ext x
+    classical
+    let y : (coherentIso.boundary.prod (⊤ : A.Subcomplex)).toSSet.obj m :=
+      (coherentIso.boundary.prod (⊤ : A.Subcomplex)).toSSet.map α x
+    by_cases hsrc : (x : (coherentIso ⊗ A).obj n).1 ∈
+      (Subcomplex.range coherentIso.src).obj n
+    · have hsrc_y : (y : (coherentIso ⊗ A).obj m).1 ∈
+        (Subcomplex.range coherentIso.src).obj m := by
+        change coherentIso.map α (x : (coherentIso ⊗ A).obj n).1 ∈
+          (Subcomplex.range coherentIso.src).obj m
+        exact (Subcomplex.range coherentIso.src).map α hsrc
+      dsimp
+      have hsrc_y0 :
+          (((coherentIso.boundary.prod (⊤ : A.Subcomplex)).toSSet.map α x :
+            (coherentIso ⊗ A).obj m).1) ∈
+            (Subcomplex.range coherentIso.src).obj m := by
+        simpa [y] using hsrc_y
+      change
+        (if (((coherentIso.boundary.prod (⊤ : A.Subcomplex)).toSSet.map α x :
+            (coherentIso ⊗ A).obj m).1) ∈ (Subcomplex.range coherentIso.src).obj m then
+          hp.section.app m (p.app m
+            (((coherentIso.boundary.prod (⊤ : A.Subcomplex)).toSSet.map α x :
+              (coherentIso ⊗ A).obj m).2))
+        else
+          (((coherentIso.boundary.prod (⊤ : A.Subcomplex)).toSSet.map α x :
+            (coherentIso ⊗ A).obj m).2)) =
+        A.map α
+          (if (x : (coherentIso ⊗ A).obj n).1 ∈
+              (Subcomplex.range coherentIso.src).obj n then
+            hp.section.app n (p.app n (x : (coherentIso ⊗ A).obj n).2)
+          else
+            (x : (coherentIso ⊗ A).obj n).2)
+      rw [if_pos hsrc_y0, if_pos hsrc]
+      change hp.section.app m (p.app m (A.map α (x : (coherentIso ⊗ A).obj n).2)) =
+        A.map α (hp.section.app n (p.app n (x : (coherentIso ⊗ A).obj n).2))
+      rw [show p.app m (A.map α (x : (coherentIso ⊗ A).obj n).2) =
+          B.map α (p.app n (x : (coherentIso ⊗ A).obj n).2) by
+        exact ConcreteCategory.congr_hom (p.naturality α) (x : (coherentIso ⊗ A).obj n).2]
+      exact ConcreteCategory.congr_hom (hp.section.naturality α)
+        (p.app n (x : (coherentIso ⊗ A).obj n).2)
+    · have hiff := coherentIso.map_mem_range_src_iff_of_boundary α x.property.left
+      have hsrc_y : (y : (coherentIso ⊗ A).obj m).1 ∉
+        (Subcomplex.range coherentIso.src).obj m := by
+        change coherentIso.map α (x : (coherentIso ⊗ A).obj n).1 ∉
+          (Subcomplex.range coherentIso.src).obj m
+        intro hm
+        exact hsrc (hiff.1 hm)
+      dsimp
+      have hsrc_y0 :
+          ¬ (((coherentIso.boundary.prod (⊤ : A.Subcomplex)).toSSet.map α x :
+            (coherentIso ⊗ A).obj m).1) ∈
+            (Subcomplex.range coherentIso.src).obj m := by
+        simpa [y] using hsrc_y
+      change
+        (if (((coherentIso.boundary.prod (⊤ : A.Subcomplex)).toSSet.map α x :
+            (coherentIso ⊗ A).obj m).1) ∈ (Subcomplex.range coherentIso.src).obj m then
+          hp.section.app m (p.app m
+            (((coherentIso.boundary.prod (⊤ : A.Subcomplex)).toSSet.map α x :
+              (coherentIso ⊗ A).obj m).2))
+        else
+          (((coherentIso.boundary.prod (⊤ : A.Subcomplex)).toSSet.map α x :
+            (coherentIso ⊗ A).obj m).2)) =
+        A.map α
+          (if (x : (coherentIso ⊗ A).obj n).1 ∈
+              (Subcomplex.range coherentIso.src).obj n then
+            hp.section.app n (p.app n (x : (coherentIso ⊗ A).obj n).2)
+          else
+            (x : (coherentIso ⊗ A).obj n).2)
+      rw [if_neg hsrc_y0, if_neg hsrc]
+      change A.map α (x : (coherentIso ⊗ A).obj n).2 =
+        A.map α (x : (coherentIso ⊗ A).obj n).2
+      rfl
+
+private lemma TrivialFibration.boundaryHomotopyDomainMap_comp
+    {A B : SSet.{u}} {p : A ⟶ B} (hp : TrivialFibration p) :
+    hp.boundaryHomotopyDomainMap ≫ p =
+      (coherentIso.boundary.prod (⊤ : A.Subcomplex)).ι ≫
+        CartesianMonoidalCategory.snd coherentIso A ≫ p := by
+  ext n x
+  classical
+  by_cases hsrc : (x : (coherentIso ⊗ A).obj n).1 ∈
+    (Subcomplex.range coherentIso.src).obj n
+  · dsimp [TrivialFibration.boundaryHomotopyDomainMap]
+    rw [if_pos hsrc]
+    change p.app n (hp.section.app n (p.app n (x : (coherentIso ⊗ A).obj n).2)) =
+      p.app n (x : (coherentIso ⊗ A).obj n).2
+    exact congrFun (congrArg (fun q => q.app n) hp.section_comp)
+      (p.app n (x : (coherentIso ⊗ A).obj n).2)
+  · dsimp [TrivialFibration.boundaryHomotopyDomainMap]
+    rw [if_neg hsrc]
+    rfl
+
+private noncomputable def TrivialFibration.leftHomotopyUncurry
+    {A B : SSet.{u}} {p : A ⟶ B} (hp : TrivialFibration p) :
+    coherentIso ⊗ A ⟶ A := by
+  haveI : HasLiftingProperty (coherentIso.boundary.prod (⊤ : A.Subcomplex)).ι p :=
+    hp.rlp_monomorphisms _ (MorphismProperty.monomorphisms.infer_property _)
+  let sq : CommSq hp.boundaryHomotopyDomainMap
+      (coherentIso.boundary.prod (⊤ : A.Subcomplex)).ι
+      p
+      (CartesianMonoidalCategory.snd coherentIso A ≫ p) :=
+    CommSq.mk (by
+      exact hp.boundaryHomotopyDomainMap_comp)
+  exact sq.lift
+
+private lemma TrivialFibration.leftHomotopyUncurry_fac_left
+    {A B : SSet.{u}} {p : A ⟶ B} (hp : TrivialFibration p) :
+    (coherentIso.boundary.prod (⊤ : A.Subcomplex)).ι ≫ hp.leftHomotopyUncurry =
+      hp.boundaryHomotopyDomainMap := by
+  unfold TrivialFibration.leftHomotopyUncurry
+  simp
+
+private noncomputable def coherentIso.boundarySrcCylinder (A : SSet.{u}) :
+    A ⟶ (coherentIso.boundary.prod (⊤ : A.Subcomplex) : SSet.{u}) :=
+  (coherentIso.boundary.prod (⊤ : A.Subcomplex)).lift
+    ((λ_ A).inv ≫ ((SSet.pointIsUnit.inv ≫ coherentIso.src) ▷ A))
+    (by
+      rintro n _ ⟨x, rfl⟩
+      constructor
+      · exact Or.inl ⟨_, rfl⟩
+      · simp)
+
+@[reassoc (attr := simp)]
+private lemma coherentIso.boundarySrcCylinder_ι (A : SSet.{u}) :
+    coherentIso.boundarySrcCylinder A ≫
+      (coherentIso.boundary.prod (⊤ : A.Subcomplex)).ι =
+      (λ_ A).inv ≫ ((SSet.pointIsUnit.inv ≫ coherentIso.src) ▷ A) := by
+  simp [coherentIso.boundarySrcCylinder]
+
+private noncomputable def coherentIso.boundaryTgtCylinder (A : SSet.{u}) :
+    A ⟶ (coherentIso.boundary.prod (⊤ : A.Subcomplex) : SSet.{u}) :=
+  (coherentIso.boundary.prod (⊤ : A.Subcomplex)).lift
+    ((λ_ A).inv ≫ ((SSet.pointIsUnit.inv ≫ coherentIso.tgt) ▷ A))
+    (by
+      rintro n _ ⟨x, rfl⟩
+      constructor
+      · exact Or.inr ⟨_, rfl⟩
+      · simp)
+
+@[reassoc (attr := simp)]
+private lemma coherentIso.boundaryTgtCylinder_ι (A : SSet.{u}) :
+    coherentIso.boundaryTgtCylinder A ≫
+      (coherentIso.boundary.prod (⊤ : A.Subcomplex)).ι =
+      (λ_ A).inv ≫ ((SSet.pointIsUnit.inv ≫ coherentIso.tgt) ▷ A) := by
+  simp [coherentIso.boundaryTgtCylinder]
+
+private lemma TrivialFibration.boundarySrcCylinder_boundaryHomotopyDomainMap
+    {A B : SSet.{u}} {p : A ⟶ B} (hp : TrivialFibration p) :
+    coherentIso.boundarySrcCylinder A ≫ hp.boundaryHomotopyDomainMap =
+      p ≫ hp.section := by
+  ext n x
+  classical
+  dsimp [coherentIso.boundarySrcCylinder, TrivialFibration.boundaryHomotopyDomainMap]
+  rw [if_pos]
+  · rfl
+  · exact ⟨_, rfl⟩
+
+private lemma TrivialFibration.boundaryTgtCylinder_boundaryHomotopyDomainMap
+    {A B : SSet.{u}} {p : A ⟶ B} (hp : TrivialFibration p) :
+    coherentIso.boundaryTgtCylinder A ≫ hp.boundaryHomotopyDomainMap =
+      𝟙 A := by
+  ext n x
+  classical
+  dsimp [coherentIso.boundaryTgtCylinder, TrivialFibration.boundaryHomotopyDomainMap]
+  rw [if_neg]
+  · rfl
+  · intro hsrc
+    exact coherentIso.not_mem_range_src_of_mem_range_tgt ⟨_, rfl⟩ hsrc
+
+private lemma TrivialFibration.leftHomotopyUncurry_src
+    {A B : SSet.{u}} {p : A ⟶ B} (hp : TrivialFibration p) :
+    (λ_ A).inv ≫ ((SSet.pointIsUnit.inv ≫ coherentIso.src) ▷ A) ≫
+      hp.leftHomotopyUncurry =
+      p ≫ hp.section := by
+  rw [← coherentIso.boundarySrcCylinder_ι_assoc]
+  rw [hp.leftHomotopyUncurry_fac_left]
+  exact hp.boundarySrcCylinder_boundaryHomotopyDomainMap
+
+private lemma TrivialFibration.leftHomotopyUncurry_tgt
+    {A B : SSet.{u}} {p : A ⟶ B} (hp : TrivialFibration p) :
+    (λ_ A).inv ≫ ((SSet.pointIsUnit.inv ≫ coherentIso.tgt) ▷ A) ≫
+      hp.leftHomotopyUncurry =
+      𝟙 A := by
+  rw [← coherentIso.boundaryTgtCylinder_ι_assoc]
+  rw [hp.leftHomotopyUncurry_fac_left]
+  exact hp.boundaryTgtCylinder_boundaryHomotopyDomainMap
+
+/-- A trivial fibration of simplicial sets has a homotopy from `p` followed by its chosen
+section to the identity. -/
+noncomputable def TrivialFibration.leftHomotopy {A B : SSet.{u}} {p : A ⟶ B}
+    (hp : TrivialFibration p) : Homotopy (I := coherentIso) (p ≫ hp.section) (𝟙 A) where
+  homotopy := MonoidalClosed.curry hp.leftHomotopyUncurry
+  source_eq := by
+    change MonoidalClosed.curry hp.leftHomotopyUncurry ≫
+        (MonoidalClosed.pre coherentIso.src).app A ≫ A.expPointIsoSelf.hom =
+      p ≫ hp.section
+    rw [SSet.curry_endpoint_eval]
+    exact hp.leftHomotopyUncurry_src
+  target_eq := by
+    change MonoidalClosed.curry hp.leftHomotopyUncurry ≫
+        (MonoidalClosed.pre coherentIso.tgt).app A ≫ A.expPointIsoSelf.hom =
+      𝟙 A
+    rw [SSet.curry_endpoint_eval]
+    exact hp.leftHomotopyUncurry_tgt
+
+/-- A trivial fibration of simplicial sets between quasi-categories is an equivalence of
+quasi-categories. -/
+noncomputable def TrivialFibration.toQCatEquiv {A B : QCat} {p : A ⟶ B}
+    (hp : TrivialFibration p.hom) :
+    @QCat.Equiv A.obj B.obj A.property B.property where
+  toFun := p.hom
+  invFun := hp.section
+  left_inv := hp.leftHomotopy
+  right_inv := by
+    rw [hp.section_comp]
+    exact Homotopy.refl (I := coherentIso) (𝟙 B.obj)
+
+/-- The equivalence induced by a trivial fibration has the original map as its forward map. -/
+lemma TrivialFibration.toQCatEquiv_toFun {A B : QCat} {p : A ⟶ B}
+    (hp : TrivialFibration p.hom) :
+    hp.toQCatEquiv.toFun = p.hom := rfl
+
+/-- Existence form of `TrivialFibration.toQCatEquiv`. -/
+lemma TrivialFibration.toQCatEquiv_exists {A B : QCat} {p : A ⟶ B}
+    (hp : TrivialFibration p.hom) :
+    ∃ e : @QCat.Equiv A.obj B.obj A.property B.property, e.toFun = p.hom :=
+  ⟨hp.toQCatEquiv, rfl⟩
 
 end trivialFibration
 

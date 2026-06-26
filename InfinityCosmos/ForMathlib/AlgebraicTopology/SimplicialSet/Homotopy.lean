@@ -53,14 +53,49 @@ noncomputable def expPointNatIso : ihom Δ[0] ≅ 𝟭 SSet := by
   }
 
 noncomputable def expPointIsoSelf (X : SSet) : sHom Δ[0] X ≅ X := expPointNatIso.app X
+
+open MonoidalClosed
+
+/-- Evaluating a curried map out of the tensor unit agrees with precomposition by the left
+unitor. -/
+lemma curry_unitIsoSelf_hom {A B : SSet.{u}} (H : 𝟙_ SSet.{u} ⊗ A ⟶ B) :
+    MonoidalClosed.curry H ≫ (MonoidalClosed.unitIsoSelf (C := SSet.{u}) (X := B)).hom =
+      (λ_ A).inv ≫ H := by
+  change MonoidalClosed.curry H ≫ (MonoidalClosed.unitNatIso.app B).inv = (λ_ A).inv ≫ H
+  change MonoidalClosed.curry H ≫ (λ_ ((ihom (𝟙_ SSet.{u})).obj B)).inv ≫
+      (ihom.ev (𝟙_ SSet.{u})).app B = (λ_ A).inv ≫ H
+  rw [leftUnitor_inv_naturality_assoc]
+  rw [MonoidalClosed.whiskerLeft_curry_ihom_ev_app]
+  rfl
+
+/-- Evaluating a curried map out of `Δ[0]` agrees with precomposition by the canonical
+`A ⟶ Δ[0] ⊗ A`. -/
+lemma curry_expPointIsoSelf_hom {A B : SSet.{u}} (H : Δ[0] ⊗ A ⟶ B) :
+    MonoidalClosed.curry H ≫ B.expPointIsoSelf.hom =
+      (λ_ A).inv ≫ (SSet.pointIsUnit.inv ▷ A) ≫ H := by
+  change MonoidalClosed.curry H ≫
+      ((MonoidalClosed.pre SSet.pointIsUnit.inv).app B ≫
+        (MonoidalClosed.unitIsoSelf (C := SSet.{u}) (X := B)).hom) =
+      (λ_ A).inv ≫ (SSet.pointIsUnit.inv ▷ A) ≫ H
+  slice_lhs 1 2 => rw [MonoidalClosed.curry_pre_app]
+  exact curry_unitIsoSelf_hom ((SSet.pointIsUnit.inv ▷ A) ≫ H)
+
+/-- Evaluating a curried cylinder at a chosen endpoint. -/
+lemma curry_endpoint_eval {I A B : SSet.{u}} (endpoint : Δ[0] ⟶ I) (H : I ⊗ A ⟶ B) :
+    MonoidalClosed.curry H ≫ (MonoidalClosed.pre endpoint).app B ≫ B.expPointIsoSelf.hom =
+      (λ_ A).inv ≫ (SSet.pointIsUnit.inv ≫ endpoint) ▷ A ≫ H := by
+  rw [← Category.assoc]
+  slice_lhs 1 2 => rw [MonoidalClosed.curry_pre_app]
+  rw [curry_expPointIsoSelf_hom]
+  rw [comp_whiskerRight]
+  rfl
+
 section
 
 variable {I : SSet.{u}} [Interval I]
 
 @[nolint unusedArguments]
 noncomputable def pathSpace {I : SSet.{u}} [Interval I] (X : SSet.{u}) : SSet.{u} := sHom I X
-
-open MonoidalClosed
 
 noncomputable def pathSpace.src (X : SSet.{u}) : pathSpace (I := I) X ⟶ X :=
   ((MonoidalClosed.pre Interval.src).app X ≫ X.expPointIsoSelf.hom)
