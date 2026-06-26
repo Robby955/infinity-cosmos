@@ -41,6 +41,19 @@ noncomputable def representableMap (X : K) {A B : K} (f : A ⟶ B) :
     (EnrichedCategory.Hom X A : SSet) ⟶ EnrichedCategory.Hom X B :=
   representableMap' (eHomEquiv SSet f)
 
+/-- Representable maps preserve identity morphisms. -/
+lemma representableMap_id (X A : K) :
+    representableMap X (𝟙 A) = 𝟙 (EnrichedCategory.Hom X A : SSet) := by
+  change eHomWhiskerLeft SSet X (𝟙 A) = 𝟙 (EnrichedCategory.Hom X A : SSet)
+  rw [eHomWhiskerLeft_id]
+
+/-- Representable maps preserve composition. -/
+lemma representableMap_comp {A B C : K} (X : K) (f : A ⟶ B) (g : B ⟶ C) :
+    representableMap X (f ≫ g) = representableMap X f ≫ representableMap X g := by
+  change eHomWhiskerLeft SSet X (f ≫ g) =
+    eHomWhiskerLeft SSet X f ≫ eHomWhiskerLeft SSet X g
+  rw [eHomWhiskerLeft_comp]
+
 noncomputable def toFunMap (X : K) {A B : K} (f : A ⟶ B) : Fun X A ⟶ Fun X B :=
   ObjectProperty.homMk <| representableMap X f
 
