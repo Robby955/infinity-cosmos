@@ -68,6 +68,48 @@ noncomputable def pathSpace.src (X : SSet.{u}) : pathSpace (I := I) X ⟶ X :=
 noncomputable def pathSpace.tgt (X : SSet.{u}) : pathSpace (I := I) X ⟶ X :=
   ((MonoidalClosed.pre Interval.tgt).app X ≫ X.expPointIsoSelf.hom)
 
+/-- The constant path map from a simplicial set to its path space. -/
+noncomputable def pathSpace.const (X : SSet.{u}) : X ⟶ pathSpace (I := I) X :=
+  X.expPointIsoSelf.inv ≫
+    (MonoidalClosed.pre (isTerminalDeltaZero.from I : I ⟶ Δ[0])).app X
+
+omit [Interval I] in
+private lemma pathSpace.const_endpoint_aux (X : SSet.{u}) (endpoint : Δ[0] ⟶ I) :
+    X.expPointIsoSelf.inv ≫
+        (MonoidalClosed.pre (isTerminalDeltaZero.from I : I ⟶ Δ[0])).app X ≫
+        (MonoidalClosed.pre endpoint).app X ≫ X.expPointIsoSelf.hom = 𝟙 X := by
+  let t : I ⟶ Δ[0] := isTerminalDeltaZero.from I
+  let a := (MonoidalClosed.pre t).app X
+  let b := (MonoidalClosed.pre endpoint).app X
+  let e := X.expPointIsoSelf
+  have ht : endpoint ≫ t = 𝟙 Δ[0] := isTerminalDeltaZero.hom_ext _ _
+  have hab : a ≫ b = 𝟙 _ := by
+    dsimp [a, b, t]
+    have hpre := congrArg (fun η => η.app X)
+      (MonoidalClosed.pre_map endpoint (isTerminalDeltaZero.from I : I ⟶ Δ[0]))
+    simpa [NatTrans.comp_app, ht, MonoidalClosed.pre_id] using hpre.symm
+  have hab' : a ≫ b = 𝟙 (sHom Δ[0] X) := by
+    change a ≫ b = 𝟙 _
+    exact hab
+  change e.inv ≫ (a ≫ b) ≫ e.hom = 𝟙 X
+  calc
+    e.inv ≫ (a ≫ b) ≫ e.hom = e.inv ≫ 𝟙 (sHom Δ[0] X) ≫ e.hom := by
+      exact congrArg (fun h => e.inv ≫ h ≫ e.hom) hab'
+    _ = 𝟙 X := by
+      simp [e]
+
+/-- The constant path evaluates at the source endpoint to the identity. -/
+@[reassoc (attr := simp)]
+lemma pathSpace.const_src (X : SSet.{u}) :
+    pathSpace.const (I := I) X ≫ pathSpace.src X = 𝟙 X := by
+  exact pathSpace.const_endpoint_aux (I := I) X Interval.src
+
+/-- The constant path evaluates at the target endpoint to the identity. -/
+@[reassoc (attr := simp)]
+lemma pathSpace.const_tgt (X : SSet.{u}) :
+    pathSpace.const (I := I) X ≫ pathSpace.tgt X = 𝟙 X := by
+  exact pathSpace.const_endpoint_aux (I := I) X Interval.tgt
+
 
 /-- TODO: Figure out how to allow `I` to be an a different universe from `A` and `B`?-/
 structure Homotopy {A B : SSet.{u}} (f g : A ⟶ B) : Type u
@@ -75,6 +117,16 @@ structure Homotopy {A B : SSet.{u}} (f g : A ⟶ B) : Type u
   homotopy : A ⟶ sHom I B
   source_eq : homotopy ≫ pathSpace.src B = f
   target_eq : homotopy ≫ pathSpace.tgt B = g
+
+/-- The constant homotopy from a map to itself. -/
+noncomputable def Homotopy.refl {A B : SSet.{u}} (f : A ⟶ B) : Homotopy (I := I) f f where
+  homotopy := f ≫ pathSpace.const (I := I) B
+  source_eq := by
+    change f ≫ (pathSpace.const (I := I) B ≫ pathSpace.src (I := I) B) = f
+    rw [pathSpace.const_src (I := I) B, Category.comp_id]
+  target_eq := by
+    change f ≫ (pathSpace.const (I := I) B ≫ pathSpace.tgt (I := I) B) = f
+    rw [pathSpace.const_tgt (I := I) B, Category.comp_id]
 
 /-- For the correct interval, this defines a good notion of equivalences for both Kan complexes and quasi-categories.-/
 structure Equiv (A B : SSet.{u}) : Type u where
