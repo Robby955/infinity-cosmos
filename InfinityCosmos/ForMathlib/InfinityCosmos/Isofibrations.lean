@@ -228,6 +228,21 @@ noncomputable def leibnizCotensor.isPullback {U V : SSet.{v}} (i : U ⟶ V) [Mon
   refine IsPullback.isLimit' ?_
   apply IsPullback.of_hasPullback
 
+/-- Covariant representables preserve the chosen Leibniz cotensor pullback square. -/
+theorem leibnizCotensor.representableIsPullback {U V : SSet.{v}} (i : U ⟶ V)
+    [Mono i] {A B : K} (f : A ↠ B) (X : K) :
+    IsPullback (representableMap X (leibnizCotensor.fst i f))
+      (representableMap X (leibnizCotensor.snd i f))
+      (representableMap X (cotensorCovMap U f.1))
+      (representableMap X (cotensorContraMap i B)) := by
+  haveI : HasConicalPullback SSet (cotensorCovMap U f.1) (cotensorContraMap i B) :=
+    has_isofibration_pullbacks (cotensorCovIsofibration U f) (cotensorContraMap i B)
+  change IsPullback ((eCoyoneda SSet X).map (leibnizCotensor.fst i f))
+    ((eCoyoneda SSet X).map (leibnizCotensor.snd i f))
+    ((eCoyoneda SSet X).map (cotensorCovMap U f.1))
+    ((eCoyoneda SSet X).map (cotensorContraMap i B))
+  exact (leibnizCotensor.isPullback i f).map (eCoyoneda SSet X)
+
 /-- An explicitly chosen Leibniz pullback square, as a pullback cone. -/
 @[nolint unusedArguments]
 noncomputable def leibnizCotensor.pullbackCone {U V : SSet.{v}} (i : U ⟶ V) [Mono i] {A B : K}
